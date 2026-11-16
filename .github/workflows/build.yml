@@ -1,0 +1,31 @@
+name: Build mod
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Unpack project zip
+        run: |
+          zip=$(ls ./*.zip | head -n1)
+          mkdir -p ../proj
+          unzip -q "$zip" -d ../proj
+      - name: Build
+        run: |
+          cd ../proj
+          g=$(find . -name gradlew | head -n1)
+          cd "$(dirname "$g")"
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp build/libs/*.jar "$GITHUB_WORKSPACE/out/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mod-jar
+          path: out/*.jar
